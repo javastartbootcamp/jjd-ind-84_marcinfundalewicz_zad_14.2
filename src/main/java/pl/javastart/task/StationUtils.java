@@ -6,7 +6,11 @@ import java.util.Queue;
 import java.util.Scanner;
 
 public class StationUtils {
+    private static final int EXIT = 0;
+    private static final int ADD_VEHICLE = 1;
+    private static final int PERFORM_INSPECTION = 2;
     private Queue<Vehicle> vehicles = new LinkedList<>();
+    Scanner scanner = new Scanner(System.in);
 
     public void run(String fileName) throws IOException {
         if (!fileName.isEmpty()) {
@@ -16,24 +20,16 @@ public class StationUtils {
         while (canContinue) {
             printUserChoice();
             int userChoice = readUserChoice();
-            if (userChoice == 0) {
-                canContinue = fileWritingAction(fileName);
-            } else if (userChoice == 1) {
+            if (userChoice == EXIT) {
+                fileWritingAction(fileName);
+                canContinue = false;
+            } else if (userChoice == ADD_VEHICLE) {
                 vehicles.offer(createVehicle());
-            } else if (userChoice == 2) {
-                inspectionIfQueueNotEmpty(fileName);
+            } else if (userChoice == PERFORM_INSPECTION) {
+                inspectionIfQueueIsNotEmpty(fileName);
             } else {
                 System.out.println("Coś poszło nie tak");
             }
-        }
-    }
-
-    public void performInspection(String fileName) throws IOException {
-        if (!vehicles.isEmpty()) {
-            Vehicle vehicleToInspection = vehicles.poll();
-            System.out.println("Dokonano przeglądu pojazdu o numerze VIN: " + vehicleToInspection.getVin());
-        } else {
-            clearFile(fileName);
         }
     }
 
@@ -43,21 +39,22 @@ public class StationUtils {
             canContinue = false;
             clearFile(fileName);
         } else {
-            writeQueueToFile("vehicles.txt");
+            writeQueueToFile(fileName);
             canContinue = false;
         }
         return canContinue;
     }
 
-    private void inspectionIfQueueNotEmpty(String fileName) throws IOException {
+    private void inspectionIfQueueIsNotEmpty(String fileName) throws IOException {
         if (!vehicles.isEmpty()) {
-            performInspection(fileName);
+            Vehicle vehicleToInspection = vehicles.poll();
+            System.out.println("Dokonano przeglądu pojazdu o numerze VIN: " + vehicleToInspection.getVin());
         } else {
             System.out.println("Pojazdu nie ma w kolejce");
         }
     }
 
-    public void writeQueueToFile(String fileName) throws IOException {
+    private void writeQueueToFile(String fileName) throws IOException {
         try (FileWriter fileWriter = new FileWriter(fileName);
              BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
         ) {
@@ -68,16 +65,16 @@ public class StationUtils {
         }
     }
 
-    public void readQueueFromFile(String fileName) throws IOException {
+    private void readQueueFromFile(String fileName) throws IOException {
         try (FileReader fileReader = new FileReader(fileName);
              BufferedReader bufferedReader = new BufferedReader(fileReader)
         ) {
             String fileLine = null;
             while ((fileLine = bufferedReader.readLine()) != null) {
                 String[] lines = fileLine.split(",");
-                String type = lines[0];
-                String name = lines[1];
-                String model = lines[2];
+                String type = lines[EXIT];
+                String name = lines[ADD_VEHICLE];
+                String model = lines[PERFORM_INSPECTION];
                 int year = Integer.parseInt(lines[3]);
                 int milleage = Integer.parseInt(lines[4]);
                 String vin = lines[5];
@@ -87,14 +84,14 @@ public class StationUtils {
         }
     }
 
-    public void clearFile(String fileName) throws IOException {
+    private void clearFile(String fileName) throws IOException {
         try (FileWriter fileWriter = new FileWriter(fileName, false)) {
             fileWriter.write("");
         }
     }
 
-    public Vehicle createVehicle() {
-        Scanner scanner = new Scanner(System.in);
+    private Vehicle createVehicle() {
+        scanner.nextLine();
         System.out.println("Podaj typ pojazdu");
         String type = scanner.nextLine();
         System.out.println("Podaj nazwę pojazdu");
@@ -120,7 +117,6 @@ public class StationUtils {
     }
 
     private int readUserChoice() {
-        Scanner scanner = new Scanner(System.in);
         int userChoice = scanner.nextInt();
         return userChoice;
     }
